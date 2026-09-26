@@ -838,8 +838,9 @@ func (p *poller) clearRecaptureSeen(sessID string) {
 	p.mu.Unlock()
 }
 
-// An errored pane joins the inbox rest states here: the turn that printed the
-// error is over, and a queue held there has nothing left to release it.
+// An errored pane joins the rest states for pending input and the inbox: the
+// turn that printed the error is over, and a queue held there has nothing left
+// to release it.
 func pendingDeliverable(derived string) bool {
 	return inboxDeliverable(derived) || derived == status.Errored
 }
@@ -933,7 +934,7 @@ func inboxDeliverable(derived string) bool {
 // rules cannot see is a person: the paste ends in Enter, so a line someone
 // is part way through writing holds the queue for another poll.
 func (p *poller) maybeDeliverInbox(sess store.Session, pane, derived string, agentAlive bool) (bool, error) {
-	if !agentAlive || !inboxDeliverable(derived) {
+	if !agentAlive || !pendingDeliverable(derived) {
 		return false, nil
 	}
 	clean := ansi.Strip(pane)

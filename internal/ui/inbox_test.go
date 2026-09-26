@@ -94,6 +94,19 @@ func TestInboxHoldsAMessageWhileTheAgentIsWorking(t *testing.T) {
 	}
 }
 
+func TestInboxDeliversToARestingErroredPane(t *testing.T) {
+	m := buildModel(t)
+	sess := spawnedSession(t, m, "claude-hooked")
+	queueMessage(t, m, sess.ID, "rebase on main")
+
+	if _, err := m.poller.maybeDeliverInbox(sess, "❯ ", status.Errored, true); err != nil {
+		t.Fatalf("maybeDeliverInbox: %v", err)
+	}
+	if queued, _ := m.store.QueuedCount(sess.ID); queued != 0 {
+		t.Fatal("message was held on a resting errored pane")
+	}
+}
+
 func TestInboxDeliversToARestingAgentWithItsSenderNamed(t *testing.T) {
 	m := buildModel(t)
 	sess := spawnedSession(t, m, "claude-hooked")
