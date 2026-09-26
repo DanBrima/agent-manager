@@ -212,10 +212,16 @@ func (e *Engine) TypingHold(tool, pane string) string {
 	if _, ready := e.ActivityRegion(tool, pane); !ready {
 		return Working
 	}
-	if state, matched := e.RuleMatch(tool, pane); matched && (state == Working || state == Waiting) {
-		return state
+	state, matched := e.RuleMatch(tool, pane)
+	if !matched || (state != Working && state != Waiting) {
+		return ""
 	}
-	return ""
+	// A turn that died leaves its working marker behind; Match reads that
+	// pane as errored, and the resting prompt below it takes text again.
+	if state == Working && e.tools[tool].turnDied(pane) {
+		return ""
+	}
+	return state
 }
 
 // isBusy reports whether the newest turn is still running work that

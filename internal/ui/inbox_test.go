@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/YoanWai/agent-manager/internal/config"
 	"github.com/YoanWai/agent-manager/internal/mcpreg"
 	"github.com/YoanWai/agent-manager/internal/status"
 	"github.com/YoanWai/agent-manager/internal/store"
@@ -104,6 +105,35 @@ func TestInboxDeliversToARestingErroredPane(t *testing.T) {
 	}
 	if queued, _ := m.store.QueuedCount(sess.ID); queued != 0 {
 		t.Fatal("message was held on a resting errored pane")
+	}
+}
+
+// A turn that died on a provider error leaves opencode's working marker on
+// screen above a resting footer. The message must go in, not wait behind a
+// guard that reads the dead turn as still running.
+func TestInboxDeliversToAnOpencodeTurnThatDiedOnAProviderError(t *testing.T) {
+	m := buildModel(t)
+	sess := spawnedSession(t, m, "ready-tool")
+	sess.Tool = "opencode"
+	cfg, err := config.Default()
+	if err != nil {
+		t.Fatalf("built-in config: %v", err)
+	}
+	if m.poller.engine, err = status.NewEngine(cfg); err != nil {
+		t.Fatalf("engine: %v", err)
+	}
+	queueMessage(t, m, sess.ID, "rebase on main")
+	pane := "  ┃  Reply with just the word hi.\n  ┃\n  ┃\n  ┃  API key not valid. Please pass a valid API key.\n  ┃\n     ▣  Build · Gemini 3.6 Flash\n  ┃\n  ┃\n  ┃\n  ┃  Build · Gemini 3.6 Flash Google\n  ╹▀▀▀▀\n   /home/dev                    tab agents  ctrl+p commands"
+
+	delivered, err := m.poller.maybeDeliverInbox(sess, pane, status.Errored, true)
+	if err != nil {
+		t.Fatalf("maybeDeliverInbox: %v", err)
+	}
+	if !delivered {
+		t.Fatal("message was held on an opencode pane whose turn died")
+	}
+	if queued, _ := m.store.QueuedCount(sess.ID); queued != 0 {
+		t.Fatal("message is still queued after delivery")
 	}
 }
 

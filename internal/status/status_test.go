@@ -934,6 +934,36 @@ func TestTypingHold(t *testing.T) {
 	}
 }
 
+// A turn that died on a provider error leaves opencode's working marker on
+// screen while its footer rests; the guard must agree with Match that the
+// turn stopped, while a live retry under an animated footer still holds.
+func TestTypingHoldOpencodeDiedTurn(t *testing.T) {
+	engine := defaultEngine(t)
+	cases := []struct {
+		name  string
+		pane  string
+		state string
+		hold  string
+	}{
+		{"provider error at a resting prompt",
+			"  ┃  Reply with just the word hi.\n  ┃\n  ┃\n  ┃  API key not valid. Please pass a valid API key.\n  ┃\n     ▣  Build · Gemini 3.6 Flash\n  ┃\n  ┃\n  ┃\n  ┃  Build · Gemini 3.6 Flash Google\n  ╹▀▀▀▀\n   /home/dev                    tab agents  ctrl+p commands",
+			Errored, ""},
+		{"provider retry still running",
+			"  ┃  Run the shell command ls -la and tell me what files exist.\n  ┃\n     ▣  Build · Gemini 3.6 Flash\n  ┃\n  ┃\n  ┃\n  ┃  Build · Gemini 3.6 Flash Google\n  ╹▀▀▀▀\n   ⬝⬝⬝⬝⬝■■■ This model is currently experiencing high demand. Spikes in demand are usually t… [retrying in 5s attempt #3",
+			Working, Working},
+	}
+	for _, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			if state, _ := engine.Match("opencode", testCase.pane); state != testCase.state {
+				t.Fatalf("Match() = %q, want %q", state, testCase.state)
+			}
+			if hold := engine.TypingHold("opencode", testCase.pane); hold != testCase.hold {
+				t.Fatalf("TypingHold() = %q, want %q", hold, testCase.hold)
+			}
+		})
+	}
+}
+
 // LastMessage quotes the agent's last message from its beginning, not its
 // frame or its tail: the message_start marker finds where the reply began,
 // its lines flatten into one, and the input box, shortcut hints, spinner
