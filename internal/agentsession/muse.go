@@ -110,3 +110,48 @@ func museMeta(path string) (id, cwd string, created time.Time, err error) {
 	}
 	return "", "", time.Time{}, scanErr(scanner)
 }
+
+// The session.fork.created record that opens a fork's log carries no time, so
+// the cutoff falls on the log's mtime.
+func museForks(root, sourceID string, cutoff time.Time) ([]string, error) {
+	if root == "" {
+		return nil, os.ErrNotExist
+	}
+	var forks []string
+	err := filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() && d.Name() == "subagent" {
+			return filepath.SkipDir
+		}
+		if d.IsDir() || d.Name() != "session.jsonl" {
+			return nil
+		}
+		info, err := d.Info()
+		if err != nil {
+			return err
+		}
+		if info.ModTime().Before(cutoff) {
+			return nil
+		}
+		first, err := firstLine(path)
+		if err != nil {
+			return err
+		}
+		var record struct {
+			PayloadType string `json:"payload_type"`
+			Payload     struct {
+				Fork   string `json:"fork_session_id"`
+				Source string `json:"source_session_id"`
+			} `json:"payload"`
+		}
+		if json.Unmarshal(first, &record) != nil || record.PayloadType != "session.fork.created" ||
+			record.Payload.Source != sourceID || record.Payload.Fork == "" {
+			return nil
+		}
+		forks = append(forks, record.Payload.Fork)
+		return nil
+	})
+	return forks, err
+}

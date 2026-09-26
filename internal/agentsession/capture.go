@@ -143,6 +143,47 @@ func Recapture(sessionStore, cwd string, snapshot map[string]int64, claimed map[
 	return cands[0].id, true
 }
 
+// Forks lists every fork the store records of sourceID, taken just before a
+// fork is made inside the running source (fork_keys). ForkedFrom then skips
+// these: a fork still in use keeps writing its log, so no timestamp tells it
+// apart from the new one. ok=false when the store cannot be read.
+func Forks(sessionStore, sourceID string) (map[string]bool, bool) {
+	switch sessionStore {
+	case "muse":
+		forks, err := museForks(museRoot(), sourceID, time.Time{})
+		if err != nil {
+			return nil, false
+		}
+		known := make(map[string]bool, len(forks))
+		for _, id := range forks {
+			known[id] = true
+		}
+		return known, true
+	default:
+		return nil, false
+	}
+}
+
+// ForkedFrom returns the fork of sourceID written at or after since that the
+// earlier Forks listing did not hold.
+func ForkedFrom(sessionStore, sourceID string, since time.Time, earlier map[string]bool) (string, bool) {
+	switch sessionStore {
+	case "muse":
+		forks, err := museForks(museRoot(), sourceID, since.Add(-clockSlack))
+		if err != nil {
+			return "", false
+		}
+		for _, id := range forks {
+			if !earlier[id] {
+				return id, true
+			}
+		}
+		return "", false
+	default:
+		return "", false
+	}
+}
+
 // afterSnapshot reports whether the conversation's activity postdates what
 // the pre-launch snapshot recorded: a conversation the snapshot never saw
 // was minted since, and a seen one must have moved since it was recorded.

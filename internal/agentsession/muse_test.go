@@ -108,3 +108,63 @@ func TestMuseRoot(t *testing.T) {
 		t.Fatal(got)
 	}
 }
+
+func writeMuseFork(t *testing.T, root, forkID, sourceID string, modified time.Time) {
+	t.Helper()
+	path := filepath.Join(root, "2026/09/23", forkID, "session.jsonl")
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	record := `{"stream":{"kind":"session","id":"` + forkID + `"},"payload_type":"session.fork.created",` +
+		`"payload":{"fork_session_id":"` + forkID + `","source_session_id":"` + sourceID + `"}}` + "\n"
+	if err := os.WriteFile(path, []byte(record), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chtimes(path, modified, modified); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestMuseForkedFromReadsTheForkOfTheSource(t *testing.T) {
+	t.Setenv("XDG_DATA_HOME", t.TempDir())
+	root := museRoot()
+	forked := time.Now()
+	writeMuseFork(t, root, "earlier-fork", "source", forked.Add(-time.Hour))
+	writeMuseFork(t, root, "other-fork", "other-source", forked)
+	writeMuseSession(t, root, "2026/09/23/plain", "plain", t.TempDir(), forked, forked)
+	earlier, ok := Forks("muse", "source")
+	if !ok || len(earlier) != 1 || !earlier["earlier-fork"] {
+		t.Fatalf("Forks = %v, %v; want only earlier-fork", earlier, ok)
+	}
+	if id, ok := ForkedFrom("muse", "source", forked, earlier); ok {
+		t.Fatalf("ForkedFrom before the fork = %q; want none", id)
+	}
+	writeMuseFork(t, root, "new-fork", "source", forked.Add(time.Second))
+	if id, ok := ForkedFrom("muse", "source", forked, earlier); !ok || id != "new-fork" {
+		t.Fatalf("ForkedFrom = %q, %v; want new-fork", id, ok)
+	}
+	if _, ok := Forks("codex", "source"); ok {
+		t.Fatal("Forks(codex) succeeded; want no fork store")
+	}
+}
+
+// A fork still in use keeps writing its log, so its mtime says nothing about
+// when it was made.
+func TestMuseForkedFromSkipsAnEarlierForkStillInUse(t *testing.T) {
+	t.Setenv("XDG_DATA_HOME", t.TempDir())
+	root := museRoot()
+	forked := time.Now()
+	writeMuseFork(t, root, "busy-fork", "source", forked.Add(-time.Hour))
+	earlier, ok := Forks("muse", "source")
+	if !ok {
+		t.Fatal("Forks failed")
+	}
+	writeMuseFork(t, root, "busy-fork", "source", forked.Add(time.Second))
+	if id, ok := ForkedFrom("muse", "source", forked, earlier); ok {
+		t.Fatalf("ForkedFrom = %q; want the busy fork skipped", id)
+	}
+	writeMuseFork(t, root, "new-fork", "source", forked.Add(time.Second))
+	if id, ok := ForkedFrom("muse", "source", forked, earlier); !ok || id != "new-fork" {
+		t.Fatalf("ForkedFrom = %q, %v; want new-fork", id, ok)
+	}
+}
