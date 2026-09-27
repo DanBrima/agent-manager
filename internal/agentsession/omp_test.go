@@ -110,8 +110,10 @@ func TestOmpCaptureRefusesAStaleOrForeignBreadcrumb(t *testing.T) {
 		name, tty, crumbCwd string
 		modified            time.Time
 	}{
-		// a tty number the kernel handed to an earlier, finished pane
+		// a tty number the kernel handed to an earlier, finished pane,
+		// even one that closed a moment before this launch
 		{"left by an earlier pane", "/dev/pts/5", cwd, now.Add(-time.Hour)},
+		{"left by a pane that just closed", "/dev/pts/5", cwd, now.Add(-2 * time.Second)},
 		{"another directory", "/dev/pts/6", t.TempDir(), now},
 	} {
 		writeOmpBreadcrumb(t, tc.tty, tc.crumbCwd, file, false, tc.modified)
@@ -123,6 +125,20 @@ func TestOmpCaptureRefusesAStaleOrForeignBreadcrumb(t *testing.T) {
 		if got, ok := Capture("omp", cwd, now, nil, tty); ok {
 			t.Fatalf("tty %q without a breadcrumb: captured %q", tty, got)
 		}
+	}
+}
+
+// A pane launched now can open a conversation from before the launch; its
+// breadcrumb then names that older session, which is the one to bind.
+func TestOmpCaptureAcceptsAnOlderSessionOpenedInThisLaunch(t *testing.T) {
+	t.Setenv("PI_CODING_AGENT_DIR", t.TempDir())
+	cwd := t.TempDir()
+	now := time.Now().Truncate(time.Millisecond)
+	const id = "01a0e200-0000-7000-8000-000000000007"
+	file := writeOmpSession(t, filepath.Join(ompRoot(), "-project"), id, cwd, now.Add(-24*time.Hour), now.Add(time.Second))
+	writeOmpBreadcrumb(t, "/dev/pts/10", cwd, file, false, now.Add(time.Second))
+	if got, ok := Capture("omp", cwd, now, nil, "/dev/pts/10"); !ok || got != id {
+		t.Fatalf("Capture = %q, %v", got, ok)
 	}
 }
 

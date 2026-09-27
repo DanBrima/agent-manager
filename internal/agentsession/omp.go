@@ -28,8 +28,13 @@ func ompRoot() string {
 // "pts-3"): the cwd, then the session file, then "fresh" until that file is
 // written. omp writes a session file only once the first reply lands, so in
 // a shared directory the first file to appear can belong to a later launch;
-// the breadcrumb names this pane's own. Without a usable breadcrumb nothing
-// is bound, and revive falls back to omp's picker.
+// the breadcrumb names this pane's own. It counts only when written at or
+// after launch, with no clock slack: a pane can inherit a tty number from one
+// that just closed, and that pane's breadcrumb predates this launch. omp
+// writes it after the manager stamps the launch, on the same clock. The
+// session it names may be older than the launch, when the user opened an
+// existing conversation. Without a usable breadcrumb nothing is bound, and
+// revive falls back to omp's picker.
 func captureOmp(root, cwd, terminal string, launchedAt time.Time, claimed map[string]bool) (string, bool) {
 	name, ok := strings.CutPrefix(terminal, "/dev/")
 	if root == "" || !ok || name == "" {
@@ -37,8 +42,7 @@ func captureOmp(root, cwd, terminal string, launchedAt time.Time, claimed map[st
 	}
 	crumb := filepath.Join(filepath.Dir(root), "terminal-sessions", strings.ReplaceAll(name, "/", "-"))
 	info, err := os.Stat(crumb)
-	cutoff := launchedAt.Add(-clockSlack)
-	if err != nil || info.ModTime().Before(cutoff) {
+	if err != nil || info.ModTime().Before(launchedAt) {
 		return "", false
 	}
 	data, err := os.ReadFile(crumb)
@@ -54,8 +58,8 @@ func captureOmp(root, cwd, terminal string, launchedAt time.Time, claimed map[st
 			return "", false
 		}
 	}
-	id, sessionCwd, created, err := ompMeta(lines[1])
-	if err != nil || id == "" || created.Before(cutoff) || resolvePath(sessionCwd) != resolvePath(cwd) || claimed[id] {
+	id, sessionCwd, _, err := ompMeta(lines[1])
+	if err != nil || id == "" || resolvePath(sessionCwd) != resolvePath(cwd) || claimed[id] {
 		return "", false
 	}
 	return id, true
