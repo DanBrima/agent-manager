@@ -56,7 +56,7 @@ type Tool struct {
 	ForkKeys string `toml:"fork_keys"`
 	// SessionStore names the built-in capturer that reads back the id a tool
 	// minted itself when it has no SessionIDFlag ("codex", "opencode",
-	// "gemini", "hermes", "command-code", "muse" or "antigravity").
+	// "gemini", "hermes", "command-code", "muse", "antigravity" or "omp").
 	SessionStore string `toml:"session_store"`
 	// MCP picks how the agent-manager MCP server is registered into this
 	// tool's sessions: "claude", "codex", "opencode", "grok", "gemini",
@@ -835,6 +835,41 @@ rules = [
   # editors keep the standalone shape, so both are live. The composer may
   # hold a draft typed mid-turn.
   { state = "working", pattern = "(?ms)^[ \\t]*(?:[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏][ \\t]+(?:Working|Running|Retrying|Compacting context|Auto-compacting|Context overflow detected, Auto-compacting|Summarizing branch)\\b[^\\n]*\\n[ \\t]*\\n─{8,}[ \\t]*|─+[ \\t]+[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏][ \\t]+(?:Working|Running|Retrying|Compacting context|Auto-compacting|Context overflow detected, Auto-compacting|Summarizing branch)\\b[^\\n]*)\\n(?:(?:[^─\\n][^\\n]*)?\\n)*─{8,}[ \\t]*(?:\\n[^\\n]*){2,5}[ \\t]*(?:\\n[ \\t]*)*\\z" },
+]
+
+[tools.omp]
+command = "omp"
+# omp mints its own UUIDv7 and writes the session file once the first
+# reply lands; capture it from ~/.omp/agent/sessions and resume it
+session_store = "omp"
+resume_by_id_command = "omp --resume {id}"
+resume_picker_command = "omp --resume"
+revive_command = "omp --continue"
+# omp prints no turn-end marker: a resting pane is a finished turn until
+# the user acknowledges it, the same as pi.
+default_status = "finished"
+# The default "band" composer is a status band over a "╰─ " gutter row the
+# caret sits on. The activity region starts at the pane origin, as for pi,
+# so the rules below decide every state and a reflow is never streaming.
+input_prefix = "^╰─ ?"
+activity_cutoff = "(?ms)\\A.*^╰─(?:[ \\t][^\\n]*)?$"
+# rules, the status band, and the session title omp docks at the right edge
+chrome_line = "^[ \\t]*─{8,}[ \\t]*$|^ [^ \\n](?: \\d+[smh])? [^\\n]*─{4,}[^\\n]*$|^[ \\t]{20,}\\S[^\\n]*$"
+rules = [
+  # tool approval and ask dialogs replace the composer
+  { state = "waiting", pattern = "(?m)^│ up/down navigate  enter select  esc cancel[ \\t]*│$" },
+  # first-run splash and setup wizard
+  { state = "waiting", pattern = "(?m)press enter to skip|enter confirm · esc skip · ctrl\\+c exit setup" },
+  # a reply that ends in a question waits on the user; while a turn runs
+  # the "⎋ Working…" row sits between the reply and the band
+  { state = "waiting", pattern = "(?ms)\\?[ \\t]*\\n(?:[ \\t]*\\n)*(?:[ \\t]{20,}\\S[^\\n]*\\n)? [^ \\n][^\\n]*\\n╰─(?:[ \\t][^\\n]*)?(?:\\n[ \\t]*)*\\z" },
+  # while a turn runs the band trades its idle brand for a spinner and an
+  # elapsed timer ("⠋ 4s > ⬢ model > …"); retries keep it running
+  { state = "working", pattern = "(?ms)^ [^ \\n] \\d+[smh] [^\\n]*\\n╰─(?:[ \\t][^\\n]*)?(?:\\n[ \\t]*)*\\z" },
+  # a failed turn: the boxed provider error, or an "Error:" row, right
+  # above the resting band
+  { state = "errored", pattern = "(?ms)^ Dismissed when you send your next message\\.[ \\t]*\\n─{8,}[ \\t]*\\n(?:[ \\t]*\\n)*(?:[ \\t]{20,}\\S[^\\n]*\\n)? [^ \\n][^\\n]*\\n╰─(?:[ \\t][^\\n]*)?(?:\\n[ \\t]*)*\\z" },
+  { state = "errored", pattern = "(?ms)^ Error: [^\\n]*(?:\\n[ \\t]+\\S[^\\n]*){0,8}\\n(?:[ \\t]*\\n)*(?:[ \\t]{20,}\\S[^\\n]*\\n)? [^ \\n][^\\n]*\\n╰─(?:[ \\t][^\\n]*)?(?:\\n[ \\t]*)*\\z" },
 ]
 
 [tools.command-code]

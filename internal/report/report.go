@@ -325,6 +325,7 @@ func toolLabel(toolName string) string {
 		"hermes":       "Hermes Agent",
 		"command-code": "Command Code",
 		"muse":         "Muse Code",
+		"omp":          "Oh My Pi",
 	}
 	if label, known := labels[toolName]; known {
 		return label

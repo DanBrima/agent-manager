@@ -374,7 +374,7 @@ func TestDefaultResumeByIDFields(t *testing.T) {
 		t.Fatalf("pi resume_by_id_command = %q want \"pi --session {id}\"", got)
 	}
 	// Tools that mint their own id declare a store to capture it from.
-	for _, name := range []string{"codex", "opencode", "hermes", "command-code", "antigravity"} {
+	for _, name := range []string{"codex", "opencode", "hermes", "command-code", "antigravity", "omp"} {
 		tool := cfg.Tools[name]
 		if tool.SessionStore != name {
 			t.Fatalf("%s session_store = %q want %q", name, tool.SessionStore, name)
@@ -396,6 +396,7 @@ func TestDefaultResumeByIDFields(t *testing.T) {
 		{"gemini", "gemini -i /resume"},
 		{"hermes", "hermes --cli {choice} sessions browse"},
 		{"pi", "pi --resume"},
+		{"omp", "omp --resume"},
 	} {
 		if got := cfg.Tools[tc.name].ResumePickerCommand; got != tc.want {
 			t.Fatalf("%s resume_picker_command = %q want %q", tc.name, got, tc.want)
@@ -417,7 +418,7 @@ func TestDefaultResumeByIDFields(t *testing.T) {
 	if got := cfg.Tools["antigravity"].ResumePickerKeys; got != "/resume" {
 		t.Fatalf("antigravity resume_picker_keys = %q want \"/resume\"", got)
 	}
-	for _, name := range []string{"claude", "codex", "command-code", "grok", "gemini", "hermes", "pi"} {
+	for _, name := range []string{"claude", "codex", "command-code", "grok", "gemini", "hermes", "pi", "omp"} {
 		if got := cfg.Tools[name].ResumePickerKeys; got != "" {
 			t.Fatalf("%s resume_picker_keys = %q want empty", name, got)
 		}
@@ -654,5 +655,24 @@ func TestEveryCatalogToolTakesWhatItLists(t *testing.T) {
 		if tool.ProfileArgs != "" && !strings.Contains(tool.ProfileArgs, "{profile}") {
 			t.Errorf("%s profile_args = %q", name, tool.ProfileArgs)
 		}
+	}
+}
+
+func TestOmpDefaults(t *testing.T) {
+	cfg, err := Default()
+	if err != nil {
+		t.Fatal(err)
+	}
+	tool, ok := cfg.Tools["omp"]
+	if !ok || tool.Command != "omp" || tool.SessionStore != "omp" || tool.ResumeByIDCommand != "omp --resume {id}" || tool.ReviveCommand != "omp --continue" {
+		t.Fatalf("omp defaults = %+v", tool)
+	}
+	// omp has no flag that picks the session id or forks from the command
+	// line, and takes its startup prompt as a positional argument.
+	if tool.SessionIDFlag != "" || tool.ForkCommand != "" || tool.ForkKeys != "" || tool.PromptFlag != "" {
+		t.Fatalf("unsupported omp flags: %+v", tool)
+	}
+	if tool.MCP != "" || tool.DefaultStatus != "finished" || tool.InputPrefix == "" {
+		t.Fatalf("omp status defaults = %+v", tool)
 	}
 }
