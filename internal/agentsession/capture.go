@@ -65,9 +65,12 @@ func resolvePath(p string) string {
 // ("codex", "opencode", "gemini", "hermes", "command-code", "muse",
 // "antigravity" or "omp"). claimed holds ids already bound to other sessions,
 // so two sessions started in one directory do not capture the same
-// conversation. It returns ok=false when no confident match exists yet; the
-// caller retries on the next poll.
-func Capture(sessionStore, cwd string, launchedAt time.Time, claimed map[string]bool) (string, bool) {
+// conversation. terminal is the tty device of the session's pane: omp
+// records which session each terminal runs, which tells sessions sharing a
+// directory apart where file times cannot; the other stores ignore it. It
+// returns ok=false when no confident match exists yet; the caller retries on
+// the next poll.
+func Capture(sessionStore, cwd string, launchedAt time.Time, claimed map[string]bool, terminal string) (string, bool) {
 	switch sessionStore {
 	case "codex":
 		return captureCodex(codexRoot(), cwd, launchedAt, claimed)
@@ -84,7 +87,7 @@ func Capture(sessionStore, cwd string, launchedAt time.Time, claimed map[string]
 	case "antigravity":
 		return captureAntigravity(antigravityRoot(), cwd, launchedAt, claimed)
 	case "omp":
-		return captureOmp(ompRoot(), cwd, launchedAt, claimed)
+		return captureOmp(ompRoot(), cwd, terminal, launchedAt, claimed)
 	default:
 		return "", false
 	}

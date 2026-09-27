@@ -54,7 +54,7 @@ Not here yet: cost tracking.
 
 ## Supported tools
 
-Status detection supports **Claude Code**, **OpenCode**, **Codex**, **Grok Build**, **Gemini CLI**, **Antigravity CLI**, **Pi**, **Command Code**, **Hermes Agent**, **Muse Code**, and **Oh My Pi**. Each one's launch, revive, fork, and status rules ship in the binary (Hermes and Antigravity have no fork), so an upgrade brings the current version of all of them (see [Configuration](docs/configuration.md#agent-clis)). A CLI that is not on the list is a [feature request](https://github.com/YoanWai/agent-manager/issues/new/choose).
+Status detection supports **Claude Code**, **OpenCode**, **Codex**, **Grok Build**, **Gemini CLI**, **Antigravity CLI**, **Pi**, **Command Code**, **Hermes Agent**, **Muse Code**, and **Oh My Pi**. Each one's launch, revive, fork, and status rules ship in the binary (Hermes, Antigravity, and Oh My Pi have no fork), so an upgrade brings the current version of all of them (see [Configuration](docs/configuration.md#agent-clis)). A CLI that is not on the list is a [feature request](https://github.com/YoanWai/agent-manager/issues/new/choose).
 
 ## Install
 

@@ -23,8 +23,42 @@ func ompRoot() string {
 	return filepath.Join(agentDir, "sessions")
 }
 
-func captureOmp(root, cwd string, launchedAt time.Time, claimed map[string]bool) (string, bool) {
-	return captureCandidates(ompCandidates(root, cwd, launchedAt.Add(-clockSlack), claimed))
+// captureOmp reads the breadcrumb omp keeps for the terminal it runs in,
+// terminal-sessions/<tty> next to the sessions root ("/dev/pts/3" is
+// "pts-3"): the cwd, then the session file, then "fresh" until that file is
+// written. omp writes a session file only once the first reply lands, so in
+// a shared directory the first file to appear can belong to a later launch;
+// the breadcrumb names this pane's own. Without a usable breadcrumb nothing
+// is bound, and revive falls back to omp's picker.
+func captureOmp(root, cwd, terminal string, launchedAt time.Time, claimed map[string]bool) (string, bool) {
+	name, ok := strings.CutPrefix(terminal, "/dev/")
+	if root == "" || !ok || name == "" {
+		return "", false
+	}
+	crumb := filepath.Join(filepath.Dir(root), "terminal-sessions", strings.ReplaceAll(name, "/", "-"))
+	info, err := os.Stat(crumb)
+	cutoff := launchedAt.Add(-clockSlack)
+	if err != nil || info.ModTime().Before(cutoff) {
+		return "", false
+	}
+	data, err := os.ReadFile(crumb)
+	if err != nil {
+		return "", false
+	}
+	lines := strings.Split(string(data), "\n")
+	if len(lines) < 2 || resolvePath(lines[0]) != resolvePath(cwd) || lines[1] == "" {
+		return "", false
+	}
+	for _, extra := range lines[2:] {
+		if extra == "fresh" {
+			return "", false
+		}
+	}
+	id, sessionCwd, created, err := ompMeta(lines[1])
+	if err != nil || id == "" || created.Before(cutoff) || resolvePath(sessionCwd) != resolvePath(cwd) || claimed[id] {
+		return "", false
+	}
+	return id, true
 }
 
 func snapshotOmp(root, cwd string) (map[string]int64, bool) {

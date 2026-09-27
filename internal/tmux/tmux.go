@@ -914,8 +914,8 @@ func noServer(out string) bool {
 }
 
 // Pane is a managed session's agent pane: the process running in it, the
-// size the preview draws it at, how many panes share its window, and the
-// directory the agent sits in now. A count above one means the agent split
+// size the preview draws it at, how many panes share its window, its tty,
+// and the directory the agent sits in now. A count above one means the agent split
 // the window itself, leaving its own pane a fraction of the geometry the
 // manager pinned.
 type Pane struct {
@@ -924,7 +924,10 @@ type Pane struct {
 	Height    int
 	Panes     int
 	AltScreen bool
-	Path      string
+	// TTY is the pane's tty device ("/dev/pts/3"), which omp keys the
+	// session it runs by.
+	TTY  string
+	Path string
 }
 
 // Panes returns every managed session's agent pane in a single tmux call,
@@ -933,7 +936,7 @@ type Pane struct {
 // session whose agent split the window reports the agent's own process and
 // the size the preview draws, never a teammate's.
 func (d *Driver) Panes() (map[string]Pane, error) {
-	out, err := exec.Command(d.bin, d.args("list-panes", "-a", "-f", "#{==:#{pane_index},0}", "-F", "#{session_name} #{pane_pid} #{pane_width} #{pane_height} #{window_panes} #{alternate_on} #{pane_current_path}")...).CombinedOutput()
+	out, err := exec.Command(d.bin, d.args("list-panes", "-a", "-f", "#{==:#{pane_index},0}", "-F", "#{session_name} #{pane_pid} #{pane_width} #{pane_height} #{window_panes} #{alternate_on} #{pane_tty} #{pane_current_path}")...).CombinedOutput()
 	if err != nil {
 		if noServer(string(out)) {
 			return map[string]Pane{}, nil
@@ -952,11 +955,11 @@ func (d *Driver) Panes() (map[string]Pane, error) {
 		if _, taken := panes[id]; taken {
 			continue
 		}
-		fields := strings.SplitN(geometry, " ", 6)
-		if len(fields) < 6 {
+		fields := strings.SplitN(geometry, " ", 7)
+		if len(fields) < 7 {
 			continue
 		}
-		pane := Pane{Path: fields[5]}
+		pane := Pane{TTY: fields[5], Path: fields[6]}
 		var altScreen int
 		if _, err := fmt.Sscanf(geometry, "%d %d %d %d %d", &pane.PID, &pane.Width, &pane.Height, &pane.Panes, &altScreen); err == nil {
 			pane.AltScreen = altScreen == 1
