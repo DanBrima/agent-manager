@@ -5,7 +5,7 @@
   </picture>
 </h1>
 
-<p align="center"><b>The fastest workflow for every AI coding agent.</b></p>
+<p align="center"><b>The fastest developer workflow for every AI coding agent.</b></p>
 
 <p align="center">
   <a href="https://peerlist.io/yoanwai/project/agent-manager" target="_blank" rel="noopener noreferrer">
