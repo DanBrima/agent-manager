@@ -1155,6 +1155,83 @@ func TestLastMessage(t *testing.T) {
 	}
 }
 
+// codex draws a queued follow-up under the running step and a done time under
+// a finished reply; neither is part of the reply the row quotes.
+func TestLastMessageSkipsCodexQueuedFollowUpAndDoneTime(t *testing.T) {
+	engine := defaultEngine(t)
+	transcript := "› Run the shell command `sleep 25; echo first-done` and reply with one short sentence.\n" +
+		"\n" +
+		"• Running sleep 25; echo first-done\n" +
+		"\n" +
+		"• Working (12s • esc to interrupt)\n" +
+		"\n"
+	composer := "› Ask Codex to do anything\n" +
+		"  gpt-5.1-codex default · /home/dev"
+	queued := transcript +
+		"• Queued follow-up inputs\n" +
+		"  ↳ Also, after that finishes, tell me in one plain sentence what a terminal multiplexer is.\n" +
+		"    shift + ← edit last queued message\n" +
+		"\n" +
+		composer
+	want, _, _ := engine.LastMessage("codex", transcript+composer)
+	if line, _, ok := engine.LastMessage("codex", queued); !ok || line != want {
+		t.Fatalf("queued pane quote = %q ok=%v, want %q as without the queued block", line, ok, want)
+	}
+
+	narrow := transcript +
+		"• Queued follow-up\n" +
+		"  inputs\n" +
+		"  ↳ Also, after that\n" +
+		"    finishes, tell me\n" +
+		"    what tmux is.\n" +
+		"    shift + ← edit\n" +
+		"    last queued\n" +
+		"    message\n" +
+		"\n" +
+		composer
+	if line, _, ok := engine.LastMessage("codex", narrow); !ok || line != want {
+		t.Fatalf("narrow queued pane quote = %q ok=%v, want %q as without the queued block", line, ok, want)
+	}
+
+	wrapped := transcript +
+		"• Queued\n" +
+		"  follow-up\n" +
+		"  inputs\n" +
+		"  ↳ Also, after that\n" +
+		"    finishes, tell me\n" +
+		"    what tmux is.\n" +
+		"    shift + ← edit\n" +
+		"    last queued\n" +
+		"    message\n" +
+		"\n" +
+		composer
+	if line, _, ok := engine.LastMessage("codex", wrapped); !ok || line != want {
+		t.Fatalf("wrapped 22-col queued pane quote = %q ok=%v, want %q as without the queued block", line, ok, want)
+	}
+
+	done := "› Tea or coffee?\n" +
+		"\n" +
+		"• Tea, good choice.\n" +
+		"  done 12:59 AM\n" +
+		"\n" +
+		"› Ask Codex to do anything\n" +
+		"  gpt-5.1-codex default · /home/dev"
+	if line, _, ok := engine.LastMessage("codex", done); !ok || line != "Tea, good choice." {
+		t.Fatalf("done pane quote = %q ok=%v, want the reply alone", line, ok)
+	}
+
+	reply := "› Status?\n" +
+		"\n" +
+		"• Queued\n" +
+		"  done 12:59 AM\n" +
+		"\n" +
+		"› Ask Codex to do anything\n" +
+		"  gpt-5.1-codex default · /home/dev"
+	if line, _, ok := engine.LastMessage("codex", reply); !ok || line != "Queued" {
+		t.Fatalf("genuine reply 'Queued' quote = %q ok=%v, want 'Queued'", line, ok)
+	}
+}
+
 // InputDraft reads what the user has typed after the composer marker, and
 // refuses the placeholder wording a composer paints on its empty row.
 func TestInputDraft(t *testing.T) {

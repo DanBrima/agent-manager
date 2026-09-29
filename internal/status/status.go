@@ -506,7 +506,17 @@ func (tr toolRules) chromeBlockRows(lines []string) []bool {
 			open = false
 			continue
 		}
-		open = open || tr.chromeBlock.MatchString(line)
+		matchText := line
+		if !open {
+			for j := i + 1; j < len(lines); j++ {
+				next := strings.TrimRight(lines[j], " \t")
+				if strings.TrimSpace(next) != "" {
+					matchText += "\n" + next
+					break
+				}
+			}
+		}
+		open = open || tr.chromeBlock.MatchString(matchText)
 		inBlock[i] = open
 	}
 	return inBlock
