@@ -106,7 +106,7 @@ The full reference, every key, the quick prompt, killing and reviving, diff revi
 | `s` | Settings (default tool, theme or follow the OS light/dark mode, list density, mouse, review layout, desktop notifications) |
 | `?` | The key map for the current screen; review shows only review bindings |
 
-A session can spawn into its own git worktree (`<repo>-worktrees/<name>`, branch `am/<name>`), toggled on the `n` form, with `alt+w` in the quick prompt, or by default in Settings.
+A session can spawn into its own git worktree (`<repo>-worktrees/<name>`, branch `am/<name>`), toggled on the `n` form, with `ctrl+t` in the quick prompt, or by default in Settings.
 
 ![the session tree, with a waiting agent's permission prompt in the preview](docs/screenshot-sessions.png)
 

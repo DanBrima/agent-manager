@@ -90,7 +90,12 @@ func (m *Model) handleQuickKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.quick.toolIndex = (m.quick.toolIndex + 1) % len(m.quick.toolNames)
 		}
 		return m, nil
-	case "shift+tab", "alt+w":
+	case "shift+tab":
+		if n := len(m.quick.toolNames); n > 0 {
+			m.quick.toolIndex = (m.quick.toolIndex + n - 1) % n
+		}
+		return m, nil
+	case "ctrl+t", "alt+w":
 		dir := m.quickTargetDir()
 		if !m.worktreeCapable(dir) {
 			m.errBar.text = "worktree sessions need a git repository: " + dir + " is not one"
@@ -214,7 +219,7 @@ func (m *Model) clearQuickAfterSend() {
 }
 
 // quickWorktreeOn is the worktree state the quick bar shows and spawns
-// with: the target group's default until shift+tab overrides it, and off
+// with: the target group's default until ctrl+t overrides it, and off
 // whenever the target directory cannot host a worktree.
 func (m *Model) quickWorktreeOn() bool {
 	if !m.worktreeCapable(m.quickTargetDir()) {
