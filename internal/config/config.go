@@ -857,9 +857,9 @@ activity_cutoff = "(?ms)\\A.*^╰─(?:[ \\t][^\\n]*)?$"
 chrome_line = "^[ \\t]*─{8,}[ \\t]*$|^ [^ \\n](?: \\d+[smh])? [^\\n]*─{4,}[^\\n]*$|^[ \\t]{20,}\\S[^\\n]*$"
 rules = [
   # tool approval and ask dialogs replace the composer
-  { state = "waiting", pattern = "(?m)^│ up/down navigate  enter select  esc cancel[ \\t]*│$" },
+  { state = "waiting", pattern = "(?m)^│ \\S+ navigate  \\S+ select  \\S+ cancel[ \\t]*│$" },
   # first-run splash and setup wizard
-  { state = "waiting", pattern = "(?m)press enter to skip|enter confirm · esc skip · ctrl\\+c exit setup" },
+  { state = "waiting", pattern = "(?m)press \\S+ to skip|\\S+ confirm · \\S+ skip · \\S+ exit setup" },
   # a reply that ends in a question waits on the user; while a turn runs
   # the "⎋ Working…" row sits between the reply and the band
   { state = "waiting", pattern = "(?ms)\\?[ \\t]*\\n(?:[ \\t]*\\n)*(?:[ \\t]{20,}\\S[^\\n]*\\n)? [^ \\n][^\\n]*\\n╰─(?:[ \\t][^\\n]*)?(?:\\n[ \\t]*)*\\z" },

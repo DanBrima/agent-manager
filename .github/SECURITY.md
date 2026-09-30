@@ -39,5 +39,5 @@ Findings that involve one of these crossing a trust boundary in a way the docs d
 
 ## Out of scope
 
-- Behavior of the AI agents themselves (Claude Code, Codex, OpenCode, Grok, Gemini, Antigravity, Pi, Command Code, Hermes, Muse Code). Report those to their maintainers.
+- Behavior of the AI agents themselves (Claude Code, Codex, OpenCode, Grok, Gemini, Antigravity, Pi, Command Code, Hermes, Muse Code, Oh My Pi). Report those to their maintainers.
 - Anything requiring an attacker to already have write access to your config file or your shell.

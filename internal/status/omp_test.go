@@ -47,6 +47,29 @@ func TestOmpPanes(t *testing.T) {
 	}
 }
 
+// omp 18.4.2 fixtures are captures of the same flows on 18.4.2, which
+// draws its key hints as glyphs (⏎, ⎋, ↑/↓) where 18.2.11 spelled them
+// out: the splash, the setup wizard and the tool approval footer.
+func TestOmp1842Panes(t *testing.T) {
+	engine := defaultEngine(t)
+	for _, tc := range []struct{ frame, want string }{
+		{"splash", Waiting},
+		{"setup-wizard", Waiting},
+		{"launched", Finished},
+		{"working", Working},
+		{"finished", Finished},
+		{"approval", Waiting},
+		{"after-approve", Finished},
+		{"question", Waiting},
+	} {
+		t.Run(tc.frame, func(t *testing.T) {
+			if got, _ := engine.Match("omp", ompFrame(t, "18.4.2/"+tc.frame)); got != tc.want {
+				t.Fatalf("Match(%s) = %q want %q", tc.frame, got, tc.want)
+			}
+		})
+	}
+}
+
 // Shapes derived from the captures: a question or an error that a later
 // turn answered, and a draft typed into the composer's gutter row.
 func TestOmpPanesAcrossTurns(t *testing.T) {
