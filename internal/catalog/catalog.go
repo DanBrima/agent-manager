@@ -97,6 +97,7 @@ var readers = map[string]func(ctx context.Context, command, dir string) (Catalog
 	"codex":    readCodex,
 	"acp":      readACP,
 	"pi":       readPi,
+	"omp":      readOmp,
 	"muse":     readMuse,
 	"opencode": readOpencode,
 	"hermes":   readHermes,

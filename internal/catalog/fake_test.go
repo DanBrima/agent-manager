@@ -163,16 +163,22 @@ func runFake(name string) error {
 			}
 			return nil
 		})
-	case "pi", "pi-0.84.2":
+	case "pi", "pi-0.84.2", "omp":
 		if len(os.Args) > 1 && os.Args[1] == "--version" {
 			version := "0.85.0"
-			if name == "pi-0.84.2" {
+			switch name {
+			case "pi-0.84.2":
 				version = "0.84.2"
+			case "omp":
+				version = "omp/18.4.8"
 			}
 			fmt.Println(version)
 			return nil
 		}
 		parts := fixture("pi_rpc.json")
+		if name == "omp" {
+			parts = fixture("omp_rpc.json")
+		}
 		var levels map[string][]string
 		if err := json.Unmarshal(parts["levels"], &levels); err != nil {
 			return err

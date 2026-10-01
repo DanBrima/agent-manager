@@ -60,11 +60,21 @@ func (c *piClient) call(ctx context.Context, command map[string]any, out any) er
 	}
 }
 
-// readPi sets each model in turn to read its thinking levels.
 func readPi(ctx context.Context, command, dir string) (Catalog, error) {
 	if err := checkPiVersion(ctx, command, dir); err != nil {
 		return Catalog{}, err
 	}
+	return readPiRPC(ctx, command, dir)
+}
+
+// readOmp skips pi's version check, which cannot read omp's "omp/18.4.8";
+// omp's set_model already stays in the session.
+func readOmp(ctx context.Context, command, dir string) (Catalog, error) {
+	return readPiRPC(ctx, command, dir)
+}
+
+// readPiRPC sets each model in turn to read its thinking levels.
+func readPiRPC(ctx context.Context, command, dir string) (Catalog, error) {
 	proc, err := start(command, dir, false)
 	if err != nil {
 		return Catalog{}, err
@@ -96,7 +106,7 @@ func readPi(ctx context.Context, command, dir string) (Catalog, error) {
 			return Catalog{}, err
 		}
 		cat.Models = append(cat.Models, Model{
-			// pi's --model takes provider/id as one pattern.
+			// pi's and omp's --model take provider/id as one pattern.
 			ID:      model.Provider + "/" + model.ID,
 			Label:   model.Name,
 			Efforts: thinking.Levels,

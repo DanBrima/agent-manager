@@ -845,6 +845,10 @@ session_store = "omp"
 resume_by_id_command = "omp --resume {id}"
 resume_picker_command = "omp --resume"
 revive_command = "omp --continue"
+catalog = "omp"
+catalog_command = "omp --mode rpc --no-session"
+model_args = "--model {model}"
+effort_args = "--thinking {effort}"
 # omp prints no turn-end marker: a resting pane is a finished turn until
 # the user acknowledges it, the same as pi.
 default_status = "finished"

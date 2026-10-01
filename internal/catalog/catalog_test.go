@@ -62,6 +62,12 @@ func TestReadersTakeEveryValueFromTheCLI(t *testing.T) {
 			{ID: "anthropic/claude-opus-5", Label: "Claude Opus 5", Efforts: []string{"minimal", "low", "medium", "high", "xhigh", "max"}, Default: true},
 			{ID: "anthropic/claude-sonnet-5", Label: "Claude Sonnet 5", Efforts: []string{"off", "minimal", "low", "medium", "high", "xhigh", "max"}},
 		}}},
+		// omp answers pi's calls, under a version pi's check cannot read.
+		{"omp", "omp", Catalog{Models: []Model{
+			{ID: "huggingface/deepseek-ai/DeepSeek-R1", Label: "DeepSeek-R1", Efforts: []string{"off", "high", "max"}, Default: true},
+			{ID: "huggingface/deepseek-ai/DeepSeek-V3", Label: "DeepSeek-V3", Efforts: []string{"off"}},
+			{ID: "huggingface/moonshotai/Kimi-K3", Label: "Kimi K3", Efforts: []string{"off", "low", "high", "max"}},
+		}}},
 		{"muse", "muse", Catalog{Models: []Model{
 			{ID: "muse-spark-1.3", Label: "Muse Spark 1.3", Efforts: []string{"minimal", "low", "medium", "high", "xhigh", "max", "ultra"}},
 			{ID: "muse-spark-1.2", Label: "Muse Spark 1.2", Default: true},
