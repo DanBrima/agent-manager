@@ -96,6 +96,9 @@ func TestOmpPanesAcrossTurns(t *testing.T) {
 		{"draft answering a question", withDraft(question, "main.go"), Waiting},
 		{"draft under an error", withDraft(errored, "retry"), Errored},
 		{"draft ending in a question mark", withDraft(ompFrame(t, "finished"), "why?"), Finished},
+		{"wrapped draft under a running turn", withDraft(ompFrame(t, "working"), "and then the tests\n   in the retry path"), Working},
+		{"wrapped draft answering a question", withDraft(question, "main.go, and the\n   retry path too"), Waiting},
+		{"wrapped draft under an error", withDraft(errored, "retry the\n   last step"), Errored},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if got, _ := engine.Match("omp", tc.pane); got != tc.want {

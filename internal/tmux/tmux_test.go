@@ -1091,6 +1091,10 @@ func TestPanesFollowsTheAgentIntoANewDirectory(t *testing.T) {
 			t.Fatalf("Panes: %v", err)
 		}
 		if got = panes[id].Path; got == moved {
+			// the tty rides just ahead of the path, which holds a space
+			if tty := panes[id].TTY; !strings.HasPrefix(tty, "/dev/") {
+				t.Fatalf("Panes tty = %q, want a /dev/ device", tty)
+			}
 			return
 		}
 	}

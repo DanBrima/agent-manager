@@ -862,14 +862,14 @@ rules = [
   { state = "waiting", pattern = "(?m)press \\S+ to skip|\\S+ confirm · \\S+ skip · \\S+ exit setup" },
   # a reply that ends in a question waits on the user; while a turn runs
   # the "⎋ Working…" row sits between the reply and the band
-  { state = "waiting", pattern = "(?ms)\\?[ \\t]*\\n(?:[ \\t]*\\n)*(?:[ \\t]{20,}\\S[^\\n]*\\n)? [^ \\n][^\\n]*\\n╰─(?:[ \\t][^\\n]*)?(?:\\n[ \\t]*)*\\z" },
+  { state = "waiting", pattern = "(?ms)\\?[ \\t]*\\n(?:[ \\t]*\\n)*(?:[ \\t]{20,}\\S[^\\n]*\\n)? [^ \\n][^\\n]*\\n╰─(?:[ \\t][^\\n]*)?(?:\\n(?:[ \\t][^\\n]*)?)*\\z" },
   # while a turn runs the band trades its idle brand for a spinner and an
   # elapsed timer ("⠋ 4s > ⬢ model > …"); retries keep it running
-  { state = "working", pattern = "(?ms)^ [^ \\n] \\d+[smh] [^\\n]*\\n╰─(?:[ \\t][^\\n]*)?(?:\\n[ \\t]*)*\\z" },
+  { state = "working", pattern = "(?ms)^ [^ \\n] \\d+[smh] [^\\n]*\\n╰─(?:[ \\t][^\\n]*)?(?:\\n(?:[ \\t][^\\n]*)?)*\\z" },
   # a failed turn: the boxed provider error, or an "Error:" row, right
   # above the resting band
-  { state = "errored", pattern = "(?ms)^ Dismissed when you send your next message\\.[ \\t]*\\n─{8,}[ \\t]*\\n(?:[ \\t]*\\n)*(?:[ \\t]{20,}\\S[^\\n]*\\n)? [^ \\n][^\\n]*\\n╰─(?:[ \\t][^\\n]*)?(?:\\n[ \\t]*)*\\z" },
-  { state = "errored", pattern = "(?ms)^ Error: [^\\n]*(?:\\n[ \\t]+\\S[^\\n]*){0,8}\\n(?:[ \\t]*\\n)*(?:[ \\t]{20,}\\S[^\\n]*\\n)? [^ \\n][^\\n]*\\n╰─(?:[ \\t][^\\n]*)?(?:\\n[ \\t]*)*\\z" },
+  { state = "errored", pattern = "(?ms)^ Dismissed when you send your next message\\.[ \\t]*\\n─{8,}[ \\t]*\\n(?:[ \\t]*\\n)*(?:[ \\t]{20,}\\S[^\\n]*\\n)? [^ \\n][^\\n]*\\n╰─(?:[ \\t][^\\n]*)?(?:\\n(?:[ \\t][^\\n]*)?)*\\z" },
+  { state = "errored", pattern = "(?ms)^ Error: [^\\n]*(?:\\n[ \\t]+\\S[^\\n]*){0,8}\\n(?:[ \\t]*\\n)*(?:[ \\t]{20,}\\S[^\\n]*\\n)? [^ \\n][^\\n]*\\n╰─(?:[ \\t][^\\n]*)?(?:\\n(?:[ \\t][^\\n]*)?)*\\z" },
 ]
 
 [tools.command-code]
